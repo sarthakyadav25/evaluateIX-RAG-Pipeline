@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  rag-server:
+    build: .
+    container_name: rag-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma_db:/app/chroma_db
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

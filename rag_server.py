@@ -16,6 +16,8 @@ from dotenv import load_dotenv
 from controllers.ingestion import ingestion
 from controllers.retrieval import retrieval
 from controllers.question_generation import question_generation
+from security.auth import verify_token
+from fastapi import Depends
 from models.DocumentSource import DocumentSource
 from models.IngestResponse import IngestResponse
 from models.RetrieveRequest import RetrieveRequest
@@ -57,7 +59,8 @@ app = FastAPI(
     title="RAG Microservice",
     description="Vector ingestion and retrieval service for AI Bot Platform",
     version="1.3.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    dependencies=[Depends(verify_token)]
 )
 
 

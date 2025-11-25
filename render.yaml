@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: rag-microservice
+    runtime: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: "1"

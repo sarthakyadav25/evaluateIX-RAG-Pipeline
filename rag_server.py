@@ -60,14 +60,13 @@ app = FastAPI(
     description="Vector ingestion and retrieval service for AI Bot Platform",
     version="1.3.0",
     lifespan=lifespan,
-    dependencies=[Depends(verify_token)]
 )
 
 
 
 # --- API Endpoints ---
 
-@app.post("/ingest", response_model=IngestResponse, status_code=202)
+@app.post("/ingest", response_model=IngestResponse, status_code=202, dependencies=[Depends(verify_token)])
 async def ingest_content(
     test_id: str = Form(..., description="Unique identifier for the test/exam"),
     tenant_id: str = Form(..., description="Unique identifier for the tenant"),
@@ -78,11 +77,11 @@ async def ingest_content(
     return await ingestion(test_id, tenant_id, metadata, documents_json, files)
  
 
-@app.post("/retrieve", response_model=RetrieveResponse)
+@app.post("/retrieve", response_model=RetrieveResponse, dependencies=[Depends(verify_token)])
 async def retrieve_context(payload: RetrieveRequest):
     return await retrieval(payload)
 
-@app.post("/generate-questions", response_model=QuestionGenerationResponse)
+@app.post("/generate-questions", response_model=QuestionGenerationResponse, dependencies=[Depends(verify_token)])
 async def generate_questions(payload: QuestionGenerationRequest):
     return await question_generation(payload)
         

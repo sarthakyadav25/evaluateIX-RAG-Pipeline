@@ -6,15 +6,22 @@ from models.SearchResult import SearchResult
 from models.RetrieveResponse import RetrieveResponse
 from fastapi import FastAPI, HTTPException
 from utils.parse_markdown_json import parse_markdown_json
+from utils.queryexpansion import query_expansion
 
 async def retrieval(payload: RetrieveRequest):
     """
     Retrieve relevant context for a user query using Vector Similarity, 
     then generate an answer using Gemini 2.5 Flash.
     """
+
+    # ---0. Generate generalized response ---
+    # --- also generate joint_query with generalized response and user query
+    generalized_response = query_expansion(payload.query)
+    joint_query = payload.query + " " + generalized_response
+
     # --- 1. Generate Embedding for Query ---
     # We must use the SAME model for query embedding as we did for document embedding
-    query_vector = rag_state.embedding_model.encode(payload.query).tolist()
+    query_vector = rag_state.embedding_model.encode(joint_query).tolist()
     
     target_test_id = payload.filters.get("test_id")
     if not target_test_id:

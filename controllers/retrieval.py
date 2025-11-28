@@ -8,7 +8,9 @@ from models.RetrieveResponse import RetrieveResponse
 from fastapi import FastAPI, HTTPException
 from utils.parse_markdown_json import parse_markdown_json
 from utils.queryexpansion import query_expansion
+from utils.test_ai_content import zero_gpt_test
 from loguru import logger
+
 
 async def retrieval(payload: RetrieveRequest):
     """
@@ -20,6 +22,11 @@ async def retrieval(payload: RetrieveRequest):
     # --- also generate joint_query with generalized response and user query
     generalized_response = await query_expansion(payload.query)
     joint_query = payload.query + " " + generalized_response
+
+    #check zero gpt AI plagarism score
+    ai_score = zero_gpt_test(payload.query)
+
+
 
     # --- 1. Generate Embedding for Query ---
     # We must use the SAME model for query embedding as we did for document embedding
@@ -178,4 +185,4 @@ async def retrieval(payload: RetrieveRequest):
         except Exception as e:
             logger.error(f"Error calling Gemini: {e}")
             answer = f"Error generating answer: {str(e)}"
-    return RetrieveResponse(results=formatted_results, answer=answer)
+    return RetrieveResponse(results=formatted_results, answer=answer, ai_score=ai_score)

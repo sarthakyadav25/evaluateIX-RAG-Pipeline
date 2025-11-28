@@ -23,7 +23,6 @@ def zero_gpt_test(text):
         
         try:
             response = requests.request("POST", ZERO_GPT_URL, headers=headers, data=payload)
-            print(response)
             
             if response.status_code == 200:
                 data = response.json()

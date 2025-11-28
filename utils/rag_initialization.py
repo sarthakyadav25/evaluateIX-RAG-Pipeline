@@ -61,13 +61,24 @@ def rag_initialization():
     ))
 
     CHROMA_DB_CLOUD = os.getenv("CHROMA_DB_CLOUD")
+    CHROMA_DB_TENANT = os.getenv("CHROMA_DB_TENANT")
+    CHROMA_DB_NAME = os.getenv("CHROMA_DB_NAME")
     if CHROMA_DB_CLOUD:
         logger.info("Initializing ChromaDB...")
-        # chroma_client = chromadb.PersistentClient(path="./chroma_db")
-        chroma_client = chromadb.CloudClient(
-            api_key=CHROMA_DB_CLOUD,
-            tenant='c099f9b2-faf5-445f-8e03-12e11fa8b460',
-            database='evaluateIX-RAG-Pipeline ')
-        collection = chroma_client.get_or_create_collection(name="rag_knowledge_base_v1")
+
+        if not CHROMA_DB_NAME:
+            logger.warning("CHROMA DB NAME not found")
+        elif not CHROMA_DB_TENANT:
+            logger.warning("CHROMA DB TENANT not found")
+
+        try:
+            chroma_client = chromadb.CloudClient(
+                api_key=CHROMA_DB_CLOUD,
+                tenant= CHROMA_DB_TENANT,
+                database= CHROMA_DB_NAME)
+            collection = chroma_client.get_or_create_collection(name="rag_knowledge_base_v1")
+
+        except Exception as e:
+            raise Exception("Failed to load ChromaDB client")
     else:
         logger.warning("ChromaDB Cloud API KEY not found...")

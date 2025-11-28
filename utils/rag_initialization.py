@@ -60,10 +60,14 @@ def rag_initialization():
         task_type="RETRIEVAL_DOCUMENT" # Optimizes embeddings for storage/retrieval
     ))
 
-    logger.info("Initializing ChromaDB...")
-    # chroma_client = chromadb.PersistentClient(path="./chroma_db")
-    chroma_client = chromadb.CloudClient(
-        api_key='ck-A6ucebvXDzKTvVsFfSTgZ2zCbzZB5cE3ndDeNXcCAXai',
-        tenant='c099f9b2-faf5-445f-8e03-12e11fa8b460',
-        database='evaluateIX-RAG-Pipeline ')
-    collection = chroma_client.get_or_create_collection(name="rag_knowledge_base_v1")
+    CHROMA_DB_CLOUD = os.getenv("CHROMA_DB_CLOUD")
+    if CHROMA_DB_CLOUD:
+        logger.info("Initializing ChromaDB...")
+        # chroma_client = chromadb.PersistentClient(path="./chroma_db")
+        chroma_client = chromadb.CloudClient(
+            api_key=CHROMA_DB_CLOUD,
+            tenant='c099f9b2-faf5-445f-8e03-12e11fa8b460',
+            database='evaluateIX-RAG-Pipeline ')
+        collection = chroma_client.get_or_create_collection(name="rag_knowledge_base_v1")
+    else:
+        logger.warning("ChromaDB Cloud API KEY not found...")

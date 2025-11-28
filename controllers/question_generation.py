@@ -10,6 +10,8 @@ async def question_generation(payload: QuestionGenerationRequest):
     """
     Generates interview questions based on ALL content ingested for a specific test_id.
     """
+
+    payload.test_id = str(payload.test_id)
     if not rag_state.GEMINI_API_KEY:
         raise HTTPException(status_code=500, detail="Gemini API Key not configured")
 

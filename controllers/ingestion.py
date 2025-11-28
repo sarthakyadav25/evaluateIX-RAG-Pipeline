@@ -1,8 +1,7 @@
 import json
-from uuid import uuid4
-
-from pydantic import InstanceOf
+from pydantic import UUID4
 from models.DocumentSource import DocumentSource
+from models.IngestRequest import IngestRequest
 from models.IngestResponse import IngestResponse
 from fastapi import File, UploadFile, Form
 from typing import List
@@ -11,13 +10,7 @@ from utils.process_text_pipeline import process_text_pipeline
 from utils.extract_text_from_bytes import extract_text_from_bytes
 from loguru import logger
 
-async def ingestion(
-    test_id: str = Form(..., description="Unique identifier for the test/exam"),
-    tenant_id: str = Form(..., description="Unique identifier for the tenant"),
-    metadata: str = Form("{}", description="JSON string of global metadata"),
-    documents_json: str = Form("[]", description="JSON string list of DocumentSource (URLs/Text)"),
-    files: List[UploadFile] = File(None, description="List of binary files (PDF, DOCX, Images)")        
-):
+async def ingestion(payload: IngestRequest):
     
     """
     Ingest a batch of content into the Vector DB.
@@ -25,13 +18,15 @@ async def ingestion(
     - Binary Files (PDF, DOCX, Images) via multipart/form-data
     - URLs and Raw Text via 'documents_json' field
     """
+
+    test_id = payload.test_id
+    tenant_id = payload.tenant_id
+    metadata = payload.metadata
+    documents_json = payload.documents_json
+    files = payload.files
+    
     processed_count = 0
     errors = []
-
-    #check if test_id and tenant_id are uuid4
-    if not isinstance(test_id, uuid4) or not isinstance(tenant_id,uuid4):
-        logger.warning("Test ID and Tenant ID should be valid uuid")
-        raise ValueError("Test ID and Tenant ID should be valid uuid")
     
     # Parse global metadata
     try:

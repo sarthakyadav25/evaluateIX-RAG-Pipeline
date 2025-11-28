@@ -15,6 +15,7 @@ async def ingestion(
     files: List[UploadFile] = File(None, description="List of binary files (PDF, DOCX, Images)")        
 ):
     
+    print(files)
     """
     Ingest a batch of content into the Vector DB.
     Supports:

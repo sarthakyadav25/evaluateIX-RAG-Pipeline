@@ -16,6 +16,9 @@ def process_text_pipeline(text: str, metadata: Dict[str, Any]):
     chunk_size = 1000
     overlap = 200
     chunks = []
+
+    #ChromaDB cloud has a one time hard limit of 300 records
+    CHROMA_BATCH_LIMIT = 300
     
     # Iterate through text with a step size of (chunk_size - overlap)
     for i in range(0, len(text), chunk_size - overlap):
@@ -49,11 +52,30 @@ def process_text_pipeline(text: str, metadata: Dict[str, Any]):
 
     metadatas = [safe_metadata for _ in chunks]
 
-    rag_state.collection.add(
-        documents=chunks,
-        embeddings=embeddings,
-        metadatas=metadatas,
-        ids=ids
-    )
+   # --- 4. Store in ChromaDB (Batched) ---
+    total_records = len(chunks)
+    
+    # Loop through the data in steps of CHROMA_BATCH_LIMIT
+    for i in range(0, total_records, CHROMA_BATCH_LIMIT):
+        batch_end = i + CHROMA_BATCH_LIMIT
         
-    print(f"-> Successfully stored {len(chunks)} chunks in ChromaDB for Test ID: {metadata.get('test_id')}")
+        # Slice the lists to create a batch
+        batch_documents = chunks[i:batch_end]
+        batch_embeddings = embeddings[i:batch_end]
+        batch_metadatas = metadatas[i:batch_end]
+        batch_ids = ids[i:batch_end]
+        
+        try:
+            rag_state.collection.add(
+                documents=batch_documents,
+                embeddings=batch_embeddings,
+                metadatas=batch_metadatas,
+                ids=batch_ids
+            )
+            print(f"-> Batch {i//CHROMA_BATCH_LIMIT + 1}: Stored records {i} to {min(batch_end, total_records)}")
+        except Exception as e:
+            print(f"Error adding batch {i} to {batch_end}: {e}")
+            # Optional: You might want to raise the error or continue depending on your requirements
+            raise e
+        
+    print(f"-> Successfully completed storage of {total_records} chunks for Test ID: {metadata.get('test_id')}")

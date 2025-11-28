@@ -8,6 +8,7 @@ from models.RetrieveResponse import RetrieveResponse
 from fastapi import FastAPI, HTTPException
 from utils.parse_markdown_json import parse_markdown_json
 from utils.queryexpansion import query_expansion
+from loguru import logger
 
 async def retrieval(payload: RetrieveRequest):
     """
@@ -30,7 +31,7 @@ async def retrieval(payload: RetrieveRequest):
 
     # --- 2. Query ChromaDB ---
     # We use the 'where' clause to strictly filter chunks by test_id (Tenancy Isolation)
-    print(f"Querying Chroma for Test ID: {target_test_id}")
+    logger.info(f"Querying Chroma for Test ID: {target_test_id}")
     search_results = rag_state.collection.query(
         query_embeddings=[query_vector],
         n_results=payload.top_k,
@@ -171,10 +172,10 @@ async def retrieval(payload: RetrieveRequest):
                 if answer is None:
                     answer = {}
             else:
-                print("Gemini response for analyzing answers was blocked or empty")
+                logger.warning("Gemini response for analyzing answers was blocked or empty")
                 answer = {}
 
         except Exception as e:
-            print(f"Error calling Gemini: {e}")
+            logger.error(f"Error calling Gemini: {e}")
             answer = f"Error generating answer: {str(e)}"
     return RetrieveResponse(results=formatted_results, answer=answer)

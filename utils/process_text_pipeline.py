@@ -1,6 +1,7 @@
 import uuid
 from typing import Dict,Any
 import utils.rag_initialization as rag_state
+from loguru import logger
 
 
 def process_text_pipeline(text: str, metadata: Dict[str, Any]):
@@ -33,7 +34,7 @@ def process_text_pipeline(text: str, metadata: Dict[str, Any]):
     # --- 2. Generate Embeddings ---
     # encode() returns a list of vectors (numpy arrays). We convert to list for JSON serialization compatibility if needed, 
     # though Chroma handles numpy arrays usually. .tolist() is safer.
-    print(f"Generating embeddings for {len(chunks)} chunks...")
+    logger.info(f"Generating embeddings for {len(chunks)} chunks...")
     embeddings = rag_state.embedding_model.encode(chunks).tolist()
 
     # --- 3. Store in ChromaDB ---
@@ -72,10 +73,10 @@ def process_text_pipeline(text: str, metadata: Dict[str, Any]):
                 metadatas=batch_metadatas,
                 ids=batch_ids
             )
-            print(f"-> Batch {i//CHROMA_BATCH_LIMIT + 1}: Stored records {i} to {min(batch_end, total_records)}")
+            logger.info(f"-> Batch {i//CHROMA_BATCH_LIMIT + 1}: Stored records {i} to {min(batch_end, total_records)}")
         except Exception as e:
-            print(f"Error adding batch {i} to {batch_end}: {e}")
+            logger.error(f"Error adding batch {i} to {batch_end}: {e}")
             # Optional: You might want to raise the error or continue depending on your requirements
             raise e
         
-    print(f"-> Successfully completed storage of {total_records} chunks for Test ID: {metadata.get('test_id')}")
+    logger.info(f"-> Successfully completed storage of {total_records} chunks for Test ID: {metadata.get('test_id')}")

@@ -1,5 +1,6 @@
 import json
 import re
+from loguru import logger
 
 def parse_markdown_json(text):
     try:
@@ -15,6 +16,6 @@ def parse_markdown_json(text):
         return json.loads(json_str)
         
     except (json.JSONDecodeError, AttributeError):
-        print(f"Error parsing JSON. Raw text: {text}")
+        logger.error(f"Error parsing JSON. Raw text: {text}")
         # Return an empty dict or an error dict so the code doesn't crash
         return {"error": "Failed to parse JSON", "raw_content": text}

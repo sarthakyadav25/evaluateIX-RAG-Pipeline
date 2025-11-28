@@ -1,35 +1,18 @@
-import dotenv
 import uvicorn
-import json
-import re
-import io
-import httpx
-import uuid
-import os
+from loguru import logger
 from contextlib import asynccontextmanager
-from pypdf import PdfReader
-import docx
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-from dotenv import load_dotenv
+from fastapi import FastAPI, File, UploadFile, Form
+from typing import List
 from controllers.ingestion import ingestion
 from controllers.retrieval import retrieval
 from controllers.question_generation import question_generation
 from security.auth import verify_token
 from fastapi import Depends
-from models.DocumentSource import DocumentSource
 from models.IngestResponse import IngestResponse
 from models.RetrieveRequest import RetrieveRequest
 from models.RetrieveResponse import RetrieveResponse
-from models.SearchResult import SearchResult
 from models.QuestionGenerationResponse import QuestionGenerationResponse
 from models.QuestionGenerationRequest import QuestionGenerationRequest
-from utils.parse_markdown_json import parse_markdown_json
-from utils.download_file_from_url import download_file_from_url
-from utils.extract_text_from_bytes import extract_text_from_bytes
-from utils.process_text_pipeline import process_text_pipeline
-from utils.rag_initialization import embedding_model,GEMINI_API_KEY,collection
 from utils.rag_initialization import rag_initialization
 
 @asynccontextmanager
@@ -38,20 +21,20 @@ async def lifespan(app: FastAPI):
     This function runs BEFORE the server starts accepting requests.
     It is the perfect place to load ML models and DB connections.
     """
-    print("startup: Triggering RAG Initialization...")
+    logger.info("startup: Triggering RAG Initialization...")
     try:
         # Run your initialization logic here
         rag_initialization() 
-        print("startup: RAG Initialization Complete.")
+        logger.info("startup: RAG Initialization Complete.")
     except Exception as e:
-        print(f"startup: CRITICAL ERROR during initialization: {e}")
+        logger.critical(f"startup: CRITICAL ERROR during initialization: {e}")
         # You might want to raise the error to stop the server if models fail
         raise e
     
     yield # The server runs and handles requests here
     
     # (Optional) Code here runs when the server shuts down
-    print("shutdown: Cleaning up resources...")
+    logger.info("shutdown: Cleaning up resources...")
 
 
 # --- Configuration ---

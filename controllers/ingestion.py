@@ -1,4 +1,7 @@
 import json
+from uuid import uuid4
+
+from pydantic import InstanceOf
 from models.DocumentSource import DocumentSource
 from models.IngestResponse import IngestResponse
 from fastapi import File, UploadFile, Form
@@ -6,6 +9,7 @@ from typing import List
 from utils.download_file_from_url import download_file_from_url
 from utils.process_text_pipeline import process_text_pipeline
 from utils.extract_text_from_bytes import extract_text_from_bytes
+from loguru import logger
 
 async def ingestion(
     test_id: str = Form(..., description="Unique identifier for the test/exam"),
@@ -15,7 +19,6 @@ async def ingestion(
     files: List[UploadFile] = File(None, description="List of binary files (PDF, DOCX, Images)")        
 ):
     
-    print(files)
     """
     Ingest a batch of content into the Vector DB.
     Supports:
@@ -24,6 +27,11 @@ async def ingestion(
     """
     processed_count = 0
     errors = []
+
+    #check if test_id and tenant_id are uuid4
+    if not isinstance(test_id, uuid4) or not isinstance(tenant_id,uuid4):
+        logger.warning("Test ID and Tenant ID should be valid uuid")
+        raise ValueError("Test ID and Tenant ID should be valid uuid")
     
     # Parse global metadata
     try:
@@ -45,7 +53,7 @@ async def ingestion(
                 if doc.text:
                     extracted_text = doc.text
                 elif doc.url:
-                    print(f"Downloading from URL: {doc.url}")
+                    logger.info(f"Downloading from URL: {doc.url}")
                     file_content = await download_file_from_url(doc.url)
                     file_ext = doc.url.split('.')[-1].lower() if not doc.file_type else doc.file_type
                     extracted_text = extract_text_from_bytes(file_content, file_ext)
@@ -64,7 +72,7 @@ async def ingestion(
     if files:
         for file in files:
             try:
-                print(f"Processing binary file: {file.filename}")
+                logger.info(f"Processing binary file: {file.filename}")
                 content = await file.read()
                 filename = file.filename.lower()
                 

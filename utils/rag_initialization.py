@@ -6,6 +6,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 from chromadb.utils import embedding_functions
 import numpy as np
+from loguru import logger
 
 load_dotenv()
 
@@ -52,14 +53,14 @@ def rag_initialization():
     else:
         raise ValueError("GEMINI_API_KEY not found in environment variables")
     
-    print("Loading embedding model...")
+    logger.info("Loading embedding model...")
     embedding_model = GoogleEmbeddingAdapter(embedding_functions.GoogleGenerativeAiEmbeddingFunction(
         api_key=GEMINI_API_KEY,
         model_name="models/text-embedding-004",
         task_type="RETRIEVAL_DOCUMENT" # Optimizes embeddings for storage/retrieval
     ))
 
-    print("Initializing ChromaDB...")
+    logger.info("Initializing ChromaDB...")
     # chroma_client = chromadb.PersistentClient(path="./chroma_db")
     chroma_client = chromadb.CloudClient(
         api_key='ck-A6ucebvXDzKTvVsFfSTgZ2zCbzZB5cE3ndDeNXcCAXai',

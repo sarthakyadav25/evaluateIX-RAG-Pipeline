@@ -1,8 +1,10 @@
 import json
+import asyncio
 from models.QuestionGenerationRequest import QuestionGenerationRequest
 from models.QuestionGenerationResponse import QuestionItem,QuestionGenerationResponse
 from fastapi import HTTPException
 import utils.rag_initialization as rag_state
+from loguru import logger
 
 async def question_generation(payload: QuestionGenerationRequest):
     """
@@ -13,7 +15,7 @@ async def question_generation(payload: QuestionGenerationRequest):
 
     # 1. Fetch ALL content for this test_id
     # collection.get() allows filtering by metadata without a query vector
-    print(f"Fetching all context for Test ID: {payload.test_id}")
+    logger.info(f"Fetching all context for Test ID: {payload.test_id}")
     db_response = rag_state.collection.get(
         where={"test_id": payload.test_id}
     )
@@ -43,27 +45,31 @@ async def question_generation(payload: QuestionGenerationRequest):
 
     try:
         model = rag_state.genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(prompt)
-        print(response)
-        
-        # 4. Parse Response
-        # Clean up any potential markdown formatting the LLM might still add
-        clean_text = response.text.strip()
-        if clean_text.startswith("```json"):
-            clean_text = clean_text.replace("```json", "").replace("```", "")
-        
-        questions_data = json.loads(clean_text)
-        
-        if not isinstance(questions_data, list):
-             raise ValueError("LLM did not return a list")
+        response = await asyncio.to_thread(model.generate_content,prompt)
 
-        # Validate and convert to model list
-        formatted_questions = [QuestionItem(**q) for q in questions_data]
-        return QuestionGenerationResponse(questions=formatted_questions)
+        
+        if response.parts:
+            # 4. Parse Response
+            # Clean up any potential markdown formatting the LLM might still add
+            clean_text = response.text.strip()
+            if clean_text.startswith("```json"):
+                clean_text = clean_text.replace("```json", "").replace("```", "")
+            
+            questions_data = json.loads(clean_text)
+            
+            if not isinstance(questions_data, list):
+                raise ValueError("LLM did not return a list")
+
+            # Validate and convert to model list
+            formatted_questions = [QuestionItem(**q) for q in questions_data]
+            return QuestionGenerationResponse(questions=formatted_questions)
+        else:
+            logger.warning("Gemini output was empty in question generation")
+            raise ValueError("LLM did not return a proper ouput")
 
     except (json.JSONDecodeError, ValueError, TypeError) as e:
         # Fallback if LLM returns bad JSON or wrong structure
-        print(f"Parsing failed ({e}), falling back to line splitting.")
+        logger.error(f"Parsing failed ({e}), falling back to line splitting.")
         lines = [line.strip() for line in response.text.split('\n') if line.strip() and '?' in line]
         
         # Manually construct the objects
@@ -74,5 +80,5 @@ async def question_generation(payload: QuestionGenerationRequest):
         return QuestionGenerationResponse(questions=fallback_questions)
         
     except Exception as e:
-        print(f"Error generating questions: {e}")
+        logger.error(f"Error generating questions: {e}")
         raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")

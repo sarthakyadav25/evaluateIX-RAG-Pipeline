@@ -1,12 +1,13 @@
 import utils.rag_initialization as rag_state
 import asyncio
 from .parse_markdown_json import parse_markdown_json
+from loguru import logger
 
 async def query_expansion(query):
     """This function takes the user query and gives it to LLM to get a generalized
     answer to be passed along with the original user query"""
 
-    print("Using query to generate generalized answer...")
+    logger.info("Using query to generate generalized answer...")
 
     if rag_state.GEMINI_API_KEY:
         try:
@@ -24,10 +25,10 @@ async def query_expansion(query):
             if response.parts:
                 return response.text
             else:
-                print("Gemini Response for generalized answer was blocked or empty")
+                logger.warning("Gemini Response for generalized answer was blocked or empty")
                 return ""
 
         except Exception as e:
-            print(f"Error in query expansion: {e}")
+            logger.error(f"Error in query expansion: {e}")
 
 

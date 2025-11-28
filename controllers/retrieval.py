@@ -1,5 +1,6 @@
 import uuid
 import json
+import asyncio
 import utils.rag_initialization as rag_state
 from models.RetrieveRequest import RetrieveRequest
 from models.SearchResult import SearchResult
@@ -16,7 +17,7 @@ async def retrieval(payload: RetrieveRequest):
 
     # ---0. Generate generalized response ---
     # --- also generate joint_query with generalized response and user query
-    generalized_response = query_expansion(payload.query)
+    generalized_response = await query_expansion(payload.query)
     joint_query = payload.query + " " + generalized_response
 
     # --- 1. Generate Embedding for Query ---
@@ -162,10 +163,15 @@ async def retrieval(payload: RetrieveRequest):
                                 Do the work and return ONLY the JSON described above.
                                 """
             # Generate
-            response = model.generate_content(full_prompt)
-            answer = parse_markdown_json(response.text)
+            response = await asyncio.to_thread(model.generate_content,full_prompt)
 
-            if answer is None:
+            if response.parts:
+                answer = parse_markdown_json(response.text)
+
+                if answer is None:
+                    answer = {}
+            else:
+                print("Gemini response for analyzing answers was blocked or empty")
                 answer = {}
 
         except Exception as e:

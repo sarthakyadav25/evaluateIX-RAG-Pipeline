@@ -1,7 +1,8 @@
 import utils.rag_initialization as rag_state
+import asyncio
 from .parse_markdown_json import parse_markdown_json
 
-def query_expansion(query):
+async def query_expansion(query):
     """This function takes the user query and gives it to LLM to get a generalized
     answer to be passed along with the original user query"""
 
@@ -18,8 +19,13 @@ def query_expansion(query):
                 )
             )
             
-            response = model.generate_content(query)
-            return response.text
+            response = await asyncio.to_thread(model.generate_content,query)
+
+            if response.parts:
+                return response.text
+            else:
+                print("Gemini Response for generalized answer was blocked or empty")
+                return ""
 
         except Exception as e:
             print(f"Error in query expansion: {e}")

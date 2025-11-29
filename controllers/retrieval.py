@@ -174,6 +174,7 @@ async def retrieval(payload: RetrieveRequest):
             response = await asyncio.to_thread(model.generate_content,full_prompt)
 
             if response.parts:
+                print(response)
                 answer = parse_markdown_json(response.text)
 
                 if answer is None:

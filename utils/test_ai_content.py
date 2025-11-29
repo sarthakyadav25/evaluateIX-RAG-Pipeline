@@ -28,7 +28,7 @@ def zero_gpt_test(text):
                 data = response.json()
                 # GPTZero returns a probability (0 to 1)
                 prob = data['data']['fakePercentage']
-                return prob* 100
+                return prob
             else:
                 logger.warning("Zero GPT API error")
                 return -1

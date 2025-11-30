@@ -2,6 +2,7 @@ import utils.rag_initialization as rag_state
 import asyncio
 from .parse_markdown_json import parse_markdown_json
 from loguru import logger
+import utils.redis_init as redis_state
 
 async def query_expansion(query):
     """This function takes the user query and gives it to LLM to get a generalized
@@ -9,7 +10,13 @@ async def query_expansion(query):
 
     logger.info("Using query to generate generalized answer...")
 
-    if rag_state.GEMINI_API_KEY:
+    if rag_state.GEMINI_API_KEY: 
+        
+        cached_response = redis_state.redis_client.get(f"{query}")
+        if cached_response:
+            logger.info("Found generalized answer in redis cache using it...")
+            return cached_response
+
         try:
             model = rag_state.genai.GenerativeModel(
             model_name="gemini-2.5-flash",
@@ -23,6 +30,7 @@ async def query_expansion(query):
             response = await asyncio.to_thread(model.generate_content,query)
 
             if response.parts:
+                redis_state.redis_client.set(f"{query}",f"{response.text}",ex=864000)
                 return response.text
             else:
                 logger.warning("Gemini Response for generalized answer was blocked or empty")

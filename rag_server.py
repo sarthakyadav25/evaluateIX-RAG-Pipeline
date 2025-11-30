@@ -17,6 +17,7 @@ from models.RetrieveResponse import RetrieveResponse
 from models.QuestionGenerationResponse import QuestionGenerationResponse
 from models.QuestionGenerationRequest import QuestionGenerationRequest
 from utils.rag_initialization import rag_initialization
+from utils.redis_init import redis_init
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,11 +28,19 @@ async def lifespan(app: FastAPI):
     logger.info("startup: Triggering RAG Initialization...")
     try:
         # Run your initialization logic here
-        rag_initialization() 
+        rag_initialization()
         logger.info("startup: RAG Initialization Complete.")
     except Exception as e:
         logger.critical(f"startup: CRITICAL ERROR during initialization: {e}")
         # You might want to raise the error to stop the server if models fail
+        raise e
+    
+    try:
+        #initializing redis
+        redis_init()
+        logger.info("Redis Initialized...")
+    except Exception as e:
+        logger.critical(f"startup: CRITICAL ERROR during redist initialization: {e}")
         raise e
     
     yield # The server runs and handles requests here

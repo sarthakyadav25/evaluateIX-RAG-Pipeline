@@ -20,7 +20,7 @@ async def retrieval(payload: RetrieveRequest):
 
     # ---0. Generate generalized response ---
     # --- also generate joint_query with generalized response and user query
-    generalized_response = await query_expansion(payload.query)
+    generalized_response = await query_expansion(payload.question)
     joint_query = payload.query + " " + generalized_response
 
     #check zero gpt AI plagarism score
@@ -174,7 +174,6 @@ async def retrieval(payload: RetrieveRequest):
             response = await asyncio.to_thread(model.generate_content,full_prompt)
 
             if response.parts:
-                print(response)
                 answer = parse_markdown_json(response.text)
 
                 if answer is None:
